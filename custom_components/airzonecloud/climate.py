@@ -1,16 +1,16 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from datetime import timedelta
 from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE
 from homeassistant.util.temperature import convert as convert_temperature
 from homeassistant.components.climate import ClimateEntity
+from homeassistant.components.climate import const as c_const
 from homeassistant.components.climate.const import (
     HVAC_MODE_OFF,
     HVAC_MODE_HEAT,
     HVAC_MODE_COOL,
     HVAC_MODE_DRY,
     HVAC_MODE_FAN_ONLY,
-    HVAC_MODES,
     SUPPORT_TARGET_TEMPERATURE,
 )
 from .const import CONF_USERNAME, CONF_PASSWORD
@@ -54,18 +54,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     entities = []
     for installation in api.installations:
+        print(installation)
         for group in installation.groups:
             for device in group.devices:
                 entities.append(AirzonecloudSystem(device))
-
-
-    # for device in api.devices:
-    #     for system in device.systems:
-    #         # add zones
-    #         for zone in system.zones:
-    #             entities.append(AirzonecloudZone(zone))
-    #         # add system to allow grouped update on all sub zones
-    #         entities.append(AirzonecloudSystem(system))
 
     add_entities(entities)
 
@@ -216,28 +208,70 @@ class AirzonecloudSystem(ClimateEntity):
         return TEMP_CELSIUS
 
     @property
+    def current_temperature(self):
+        """Return the current temperature."""
+        return self._azc_system.current_temperature
+
+    @property
+    def target_temperature(self):
+        """Return the target temperature."""
+        return self._azc_system.target_temperature
+
+
+    @property
+    def target_temperature_low(self):
+        """Return the minimum target temperature."""
+        return self._azc_system.min_temperature
+
+    @property
+    def target_temperature_high(self):
+        """Return the maximum target temperature."""
+        return self._azc_system.max_temperature
+
+    @property
+    def target_temperature_step(self):
+        """Return the maximum target temperature step."""
+        return 0.5
+
+    @property
+    def current_humidity(self):
+        """Return the current humidity."""
+        return self._azc_system.current_humidity
+
+    @property
     def hvac_mode(self) -> str:
         """Return hvac operation ie. heat, cool mode."""
         mode = self._azc_system.mode
 
-        if mode in ["air-cooling", "radiant-cooling", "combined-cooling"]:
+        if mode in ["cooling"]:
             return HVAC_MODE_COOL
-
-        if mode in ["air-heating", "radiant-heating", "combined-heating"]:
+        if mode in ["heating"]:
             return HVAC_MODE_HEAT
-
         if mode == "ventilation":
             return HVAC_MODE_FAN_ONLY
-
         if mode == "dehumidify":
             return HVAC_MODE_DRY
-
         return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self) -> List[str]:
         """Return the list of available hvac operation modes."""
-        return AIRZONECLOUD_ZONE_HVAC_MODES
+        hvac_modes = []
+        for hvac_mode in self._azc_system.modes_availables:
+            if hvac_mode == 'stop':
+                hvac_modes.append(HVAC_MODE_OFF)
+            if hvac_mode == 'heating':
+                hvac_modes.append(HVAC_MODE_HEAT)
+            elif hvac_mode == 'cooling':
+                hvac_modes.append(HVAC_MODE_COOL)
+            elif hvac_mode == 'dehumidify':
+                hvac_modes.append(HVAC_MODE_DRY)
+            elif hvac_mode == 'ventilation':
+                hvac_modes.append(HVAC_MODE_FAN_ONLY)
+        return hvac_modes
+
+    def set_temperature(self, temperature: float) -> None:
+        self._azc_system.set_temperature(temperature)
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
@@ -255,7 +289,7 @@ class AirzonecloudSystem(ClimateEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return 0
+        return c_const.SUPPORT_TARGET_TEMPERATURE
 
     def update(self):
         self._azc_system.refresh()
