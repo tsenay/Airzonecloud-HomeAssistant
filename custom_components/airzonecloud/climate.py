@@ -53,13 +53,19 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         return
 
     entities = []
-    for device in api.devices:
-        for system in device.systems:
-            # add zones
-            for zone in system.zones:
-                entities.append(AirzonecloudZone(zone))
-            # add system to allow grouped update on all sub zones
-            entities.append(AirzonecloudSystem(system))
+    for installation in api.installations:
+        for group in installation.groups:
+            for device in group.devices:
+                entities.append(AirzonecloudSystem(device))
+
+
+    # for device in api.devices:
+    #     for system in device.systems:
+    #         # add zones
+    #         for zone in system.zones:
+    #             entities.append(AirzonecloudZone(zone))
+    #         # add system to allow grouped update on all sub zones
+    #         entities.append(AirzonecloudSystem(system))
 
     add_entities(entities)
 
@@ -93,13 +99,13 @@ class AirzonecloudZone(ClimateEntity):
         mode = self._azc_zone.mode
 
         if self._azc_zone.is_on:
-            if mode in ["cool-air", "cool-radiant", "cool-both"]:
+            if mode in ["air-cooling", "radiant-cooling", "combined-cooling"]:
                 return HVAC_MODE_COOL
 
-            if mode in ["heat-air", "heat-radiant", "heat-both"]:
+            if mode in ["air-heating", "radiant-heating", "combined-heating"]:
                 return HVAC_MODE_HEAT
 
-            if mode == "ventilate":
+            if mode == "ventilation":
                 return HVAC_MODE_FAN_ONLY
 
             if mode == "dehumidify":
@@ -148,13 +154,13 @@ class AirzonecloudZone(ClimateEntity):
 
             # set hvac mode on parent system
             if hvac_mode == HVAC_MODE_HEAT:
-                self._azc_zone.system.set_mode("heat-both")
+                self._azc_zone.system.set_mode("heating")
             elif hvac_mode == HVAC_MODE_COOL:
-                self._azc_zone.system.set_mode("cool-both")
+                self._azc_zone.system.set_mode("cooling")
             elif hvac_mode == HVAC_MODE_DRY:
                 self._azc_zone.system.set_mode("dehumidify")
             elif hvac_mode == HVAC_MODE_FAN_ONLY:
-                self._azc_zone.system.set_mode("ventilate")
+                self._azc_zone.system.set_mode("ventilation")
 
     def turn_on(self):
         """Turn on."""
@@ -214,13 +220,13 @@ class AirzonecloudSystem(ClimateEntity):
         """Return hvac operation ie. heat, cool mode."""
         mode = self._azc_system.mode
 
-        if mode in ["cool-air", "cool-radiant", "cool-both"]:
+        if mode in ["air-cooling", "radiant-cooling", "combined-cooling"]:
             return HVAC_MODE_COOL
 
-        if mode in ["heat-air", "heat-radiant", "heat-both"]:
+        if mode in ["air-heating", "radiant-heating", "combined-heating"]:
             return HVAC_MODE_HEAT
 
-        if mode == "ventilate":
+        if mode == "ventilation":
             return HVAC_MODE_FAN_ONLY
 
         if mode == "dehumidify":
@@ -238,13 +244,13 @@ class AirzonecloudSystem(ClimateEntity):
         if hvac_mode == HVAC_MODE_OFF:
             self._azc_system.set_mode("stop")
         if hvac_mode == HVAC_MODE_HEAT:
-            self._azc_system.set_mode("heat-both")
+            self._azc_system.set_mode("heating")
         elif hvac_mode == HVAC_MODE_COOL:
-            self._azc_system.set_mode("cool-both")
+            self._azc_system.set_mode("cooling")
         elif hvac_mode == HVAC_MODE_DRY:
             self._azc_system.set_mode("dehumidify")
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            self._azc_system.set_mode("ventilate")
+            self._azc_system.set_mode("ventilation")
 
     @property
     def supported_features(self):
@@ -252,4 +258,4 @@ class AirzonecloudSystem(ClimateEntity):
         return 0
 
     def update(self):
-        self._azc_system.refresh(True)
+        self._azc_system.refresh()

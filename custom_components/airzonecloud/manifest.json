@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/max13fr/Airzonecloud-HomeAssistant/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
-  "codeowners": ["@max13fr"],
+  "codeowners": ["@tsenay"],
   "version": "0.5.1",
   "requirements": ["AirzoneCloud==1.0.2"]
 }
