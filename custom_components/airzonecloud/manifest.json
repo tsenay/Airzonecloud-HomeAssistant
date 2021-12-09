@@ -7,5 +7,5 @@
   "after_dependencies": ["http"],
   "codeowners": ["@max13fr"],
   "version": "0.5.1",
-  "requirements": ["AirzoneCloud==0.5.0"]
+  "requirements": ["AirzoneCloud==1.0.2"]
 }
