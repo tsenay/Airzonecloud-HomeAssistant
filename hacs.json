@@ -1,4 +1,7 @@
 {
     "name": "Airzone Cloud",
-    "domains": ["climate"]
+    "domains": ["climate"],
+    "homeassistant": "2021.11.5",
+    "zip_release": false,
+    "render_readme": true
 }

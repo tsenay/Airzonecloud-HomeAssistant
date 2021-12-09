@@ -1,3 +1,13 @@
+[![GitHub Release][releases-shield]][releases]
+![GitHub all releases][download-all]
+![GitHub release (latest by SemVer)][download-latest]
+[![GitHub Activity][commits-shield]][commits]
+
+[![License][license-shield]][license]
+
+[![hacs][hacsbadge]][hacs]
+[![Project Maintenance][maintenance-shield]][user_profile]
+
 # Airzone Cloud plugin for Home Assistant
 
 ## Introduction
@@ -55,3 +65,19 @@ climate:
     password: yourpassword
     scan_interval: 5
 ```
+
+[integration_blueprint]: https://github.com/custom-components/integration_blueprint
+[commits-shield]: https://img.shields.io/github/commit-activity/y/tsenay/Airzonecloud-HomeAssistant.svg?style=for-the-badge
+[commits]: https://github.com/tsenay/Airzonecloud-HomeAssistant/commits/main
+[hacs]: https://github.com/custom-components/hacs
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/tsenay/Airzonecloud-HomeAssistant.svg?style=for-the-badge
+[license]: LICENSE
+[maintenance-shield]: https://img.shields.io/badge/maintainer-tsenay%20%40tsenay-blue.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/tsenay/Airzonecloud-HomeAssistant.svg?style=for-the-badge
+[releases]: https://github.com/tsenay/Airzonecloud-HomeAssistant/releases
+[user_profile]: https://github.com/tsenay
+[download-all]: https://img.shields.io/github/downloads/tsenay/Airzonecloud-HomeAssistant/total?style=for-the-badge
+[download-latest]: https://img.shields.io/github/downloads/tsenay/Airzonecloud-HomeAssistant/latest/total?style=for-the-badge
+[add-integration]: https://my.home-assistant.io/redirect/config_flow_start?domain=tesla_custom
+[add-integration-badge]: https://my.home-assistant.io/badges/config_flow_start.svg
