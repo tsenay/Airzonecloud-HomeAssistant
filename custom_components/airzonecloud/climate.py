@@ -87,7 +87,7 @@ class AirzonecloudZone(ClimateEntity):
 
     @property
     def hvac_mode(self) -> str:
-        """Return hvac operation ie. heat, cool mode."""
+        """Return hvac operation ie: heat, cool mode."""
         mode = self._azc_zone.mode
 
         if self._azc_zone.is_on:
@@ -185,6 +185,9 @@ class AirzonecloudZone(ClimateEntity):
 class AirzonecloudSystem(ClimateEntity):
     """Representation of an Airzonecloud System"""
 
+    def set_humidity(self, humidity: int) -> None:
+        pass
+
     hidden = True  # default hidden
 
     def __init__(self, azc_system):
@@ -217,7 +220,6 @@ class AirzonecloudSystem(ClimateEntity):
         """Return the target temperature."""
         return self._azc_system.target_temperature
 
-
     @property
     def target_temperature_low(self):
         """Return the minimum target temperature."""
@@ -240,7 +242,7 @@ class AirzonecloudSystem(ClimateEntity):
 
     @property
     def hvac_mode(self) -> str:
-        """Return hvac operation ie. heat, cool mode."""
+        """Return hvac operation ie: heat, cool mode."""
         mode = self._azc_system.mode
 
         if mode in ["cooling"]:
@@ -270,8 +272,13 @@ class AirzonecloudSystem(ClimateEntity):
                 hvac_modes.append(HVAC_MODE_FAN_ONLY)
         return hvac_modes
 
-    def set_temperature(self, temperature: float) -> None:
-        self._azc_system.set_temperature(temperature)
+    def set_temperature(self, **kwargs) -> None:
+        """Set new target temperature."""
+        if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
+            return
+        if temperature > self.target_temperature_high or temperature < self.target_temperature_low:
+            return
+        self._azc_system.set_temperature(float(temperature))
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
