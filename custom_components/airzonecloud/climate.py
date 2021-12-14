@@ -11,7 +11,9 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_COOL,
     HVAC_MODE_DRY,
     HVAC_MODE_FAN_ONLY,
+    HVAC_MODE_AUTO,
     SUPPORT_TARGET_TEMPERATURE,
+
 )
 from .const import CONF_USERNAME, CONF_PASSWORD
 
@@ -192,8 +194,22 @@ class AirzonecloudSystem(ClimateEntity):
 
     def __init__(self, azc_system):
         """Initialize the system"""
+        self._master_device = None
         self._azc_system = azc_system
+        if not self._azc_system.modes_availables:
+            for device in self._azc_system.group.devices:
+                if device.modes_availables:
+                    self._master_device = device
+
         _LOGGER.info("init system {} ({})".format(self.name, self.unique_id))
+
+    @property
+    def is_master(self):
+        """Return if current device is master."""
+        if self._master_device is None:
+            return True
+        else:
+            return False
 
     @property
     def unique_id(self) -> Optional[str]:
@@ -243,26 +259,33 @@ class AirzonecloudSystem(ClimateEntity):
     @property
     def hvac_mode(self) -> str:
         """Return hvac operation ie: heat, cool mode."""
-        mode = self._azc_system.mode
-
+        if not self._azc_system.is_on:
+            return HVAC_MODE_OFF
+        if self.is_master:
+            mode = self._azc_system.mode
+        else:
+            mode = self._master_device.mode
         if mode in ["cooling"]:
             return HVAC_MODE_COOL
-        if mode in ["heating"]:
+        elif mode in ["heating"]:
             return HVAC_MODE_HEAT
-        if mode == "ventilation":
+        elif mode == "ventilation":
             return HVAC_MODE_FAN_ONLY
-        if mode == "dehumidify":
+        elif mode == "dehumidify":
             return HVAC_MODE_DRY
-        return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self) -> List[str]:
         """Return the list of available hvac operation modes."""
         hvac_modes = []
-        for hvac_mode in self._azc_system.modes_availables:
+        if self.is_master:
+            modes = self._azc_system.modes_availables
+        else:
+            modes = self._master_device.modes_availables
+        for hvac_mode in modes:
             if hvac_mode == 'stop':
                 hvac_modes.append(HVAC_MODE_OFF)
-            if hvac_mode == 'heating':
+            elif hvac_mode == 'heating':
                 hvac_modes.append(HVAC_MODE_HEAT)
             elif hvac_mode == 'cooling':
                 hvac_modes.append(HVAC_MODE_COOL)
@@ -282,16 +305,49 @@ class AirzonecloudSystem(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
-            self._azc_system.set_mode("stop")
-        if hvac_mode == HVAC_MODE_HEAT:
-            self._azc_system.set_mode("heating")
-        elif hvac_mode == HVAC_MODE_COOL:
-            self._azc_system.set_mode("cooling")
-        elif hvac_mode == HVAC_MODE_DRY:
-            self._azc_system.set_mode("dehumidify")
-        elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            self._azc_system.set_mode("ventilation")
+        if self.is_master:
+            if hvac_mode == HVAC_MODE_OFF:
+                self._azc_system.turn_off()
+            elif hvac_mode == HVAC_MODE_HEAT:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._azc_system.set_mode("heating")
+            elif hvac_mode == HVAC_MODE_COOL:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._azc_system.set_mode("cooling")
+            elif hvac_mode == HVAC_MODE_DRY:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._azc_system.set_mode("dehumidify")
+            elif hvac_mode == HVAC_MODE_FAN_ONLY:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._azc_system.set_mode("ventilation")
+            else:
+                self._azc_system.turn_off()
+        else:
+            if hvac_mode == HVAC_MODE_OFF:
+                self._azc_system.turn_off()
+            elif hvac_mode == HVAC_MODE_HEAT:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._master_device.set_mode("heating")
+            elif hvac_mode == HVAC_MODE_COOL:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._master_device.set_mode("cooling")
+            elif hvac_mode == HVAC_MODE_DRY:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._master_device.set_mode("dehumidify")
+            elif hvac_mode == HVAC_MODE_FAN_ONLY:
+                if not self._azc_system.is_on:
+                    self._azc_system.turn_on()
+                self._master_device.set_mode("ventilation")
+            else:
+                self._azc_system.turn_off()
+        self._azc_system.refresh()
 
     @property
     def supported_features(self):
